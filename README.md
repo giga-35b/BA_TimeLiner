@@ -8,7 +8,9 @@ date: "2024-10-31"
 
 # BA TimeLiner
 
-## BATL摸轴工具
+## BATL摸轴工具，来助你成为总力战高手
+
+### [BATL v0.10.5(beta) 下载](https://github.com/giga-35b/BA_TimeLiner/raw/refs/heads/main/download/BATL_v0.10.5_beta.zip)
 
 <!-- 
 ### —— 警告 ——
