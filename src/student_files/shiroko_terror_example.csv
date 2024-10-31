@@ -1,0 +1,36 @@
+file_type,student_file
+file_name,shiroko_terror_example
+display_name,满配黑子
+img_file_path,texture_files\student_icons\Shiroko_Terror_2_Icon.png
+color_r,34
+color_g,111
+color_b,157
+star,7
+lvl,90
+skl_ex,5
+skl_ns,10
+skl_ps,10
+skl_ss,10
+eq_1,9
+eq_2,9
+eq_3,9
+eq_u,0
+pu_hp,25
+pu_ak,25
+pu_hl,25
+aff_1,50
+aff_2,0
+aff_3,0
+aff_4,0
+ex_type,buff
+ex_cost,3
+ex_pre,0.0
+ex_dur,40.0
+ns_type,伤害
+ns_cd,40
+ns_pre,5.5
+ns_dur,1.33
+note,"ex瞬发，ns在ex脱手后的约165帧（5.5s）后命中，跳伤害持续时间40帧（1.33s）
+使用方法：
+- 目标设为自身，拖动设定EX至某时间格内
+- 再将目标设为敌人，拖动设定NS至该EX同时间格内"
