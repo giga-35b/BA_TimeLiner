@@ -833,12 +833,15 @@ def load_mission_file(file_path):
 
     return Mission(log=my_dict)
 
-def second_to_minsec(second):
+def second_to_minsec(second, tail=1):
     if second<=0:
         return "0:00.0"
     temp_minute = int((second)/60)
     temp_second = (second)%60
-    return f"{temp_minute}:{temp_second:04.1f}"
+    if tail==1:
+        return f"{temp_minute}:{temp_second:04.1f}"
+    elif tail==2:
+        return f"{temp_minute}:{temp_second:05.2f}"
 
 def is_valid_english_path(path):
     # 定义允许的字符集：大小写字母、数字、空格和合法的特殊字符

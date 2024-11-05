@@ -11,7 +11,7 @@ from tkinter import filedialog
 
 from ba_timeliner_kernel import *
     
-BATL_VERSION = '0.10.5'
+BATL_VERSION = '0.10.6'
 
 # 替换输出至debug_log 第1部分
 output = io.StringIO()
@@ -1688,6 +1688,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                     last_cost_num = 0
                     last_skill_student_name = ''
                     next_skill_student_name = ''
+                    last_skill_time = -1
+                    next_skill_time = -1
                     then_skill_student_name_list = ['','','','']
                     last_skill_target = ''
                     next_skill_target = ''
@@ -1696,6 +1698,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                         nonlocal last_cost_num
                         nonlocal last_skill_student_name
                         nonlocal next_skill_student_name
+                        nonlocal last_skill_time
+                        nonlocal next_skill_time
                         nonlocal then_skill_student_name_list
                         nonlocal last_skill_target
                         nonlocal next_skill_target
@@ -1749,7 +1753,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                             skill_time, name, target_name, start_time, end_time, skill_cost, skill_type, note = mission.global_ex_timeline[last_skill_index]
                             dpg.set_value('last_skill_text', f'已释放 {round(skill_time-current_simulation_time,1)}s')
                             dpg.set_value('last_skill_note', f'已释放技能备注：{note}')
-                            if name!=last_skill_student_name:
+                            if name!=last_skill_student_name or skill_time!=last_skill_time:
                                 if last_skill_student_name:
                                     dpg.hide_item(f'last_skill_{last_skill_student_name}_rectangle')
                                     dpg.hide_item(f'last_skill_{last_skill_student_name}_text')
@@ -1765,6 +1769,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                     dpg.show_item(f'last_skill_arrow_{target_name}')
                                 last_skill_student_name = name
                                 last_skill_target = target_name
+                                last_skill_time = skill_time
                         else:
                             dpg.set_value('last_skill_text', 'N/A')
                             dpg.set_value('last_skill_note', '已释放技能备注：')
@@ -1777,12 +1782,13 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                     dpg.hide_item(f'last_skill_arrow_{last_skill_target}')
                             last_skill_student_name = ''
                             last_skill_target = ''
+                            last_skill_time = -1
 
                         if next_skill_index>=0:
                             skill_time, name, target_name, start_time, end_time, skill_cost, skill_type, note = mission.global_ex_timeline[next_skill_index]
                             dpg.set_value('next_skill_text', f'将释放 {round(current_simulation_time-skill_time,1)}s')
                             dpg.set_value('next_skill_note', f'将释放技能备注：{note}')
-                            if name!=next_skill_student_name:
+                            if name!=next_skill_student_name or skill_time!=next_skill_time:
                                 if next_skill_student_name:
                                     dpg.hide_item(f'next_skill_{next_skill_student_name}_rectangle')
                                     dpg.hide_item(f'next_skill_{next_skill_student_name}_text')
@@ -1794,10 +1800,13 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 dpg.show_item(f'next_skill_{name}_text')
                                 dpg.show_item(f'next_skill_{name}_image')
                                 dpg.show_item(f'next_skill_student_frame_{name}')
+                                # print(f'hide:  next_skill_arrow_{next_skill_target}')    # 调试用
+                                # print(f'show:  next_skill_arrow_{target_name}')
                                 if name!=target_name and dpg.does_item_exist(f'next_skill_arrow_{target_name}'):
                                     dpg.show_item(f'next_skill_arrow_{target_name}')
                                 next_skill_student_name = name
                                 next_skill_target = target_name
+                                next_skill_time = skill_time
                         else:
                             dpg.set_value('next_skill_text', 'N/A')
                             dpg.set_value('next_skill_note', '将释放技能备注：')
@@ -1810,6 +1819,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                     dpg.hide_item(f'next_skill_arrow_{next_skill_target}')
                             next_skill_student_name = ''
                             next_skill_target = ''
+                            next_skill_time = -1
                         
                         for i in range(4):
                             if next_skill_index>=0 and len(mission.global_ex_time_list)-next_skill_index>=2+i:
@@ -2010,7 +2020,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
 
             with dpg.group(horizontal=True):
                 with dpg.group():
-                    dpg.add_spacer(width=420)
+                    dpg.add_spacer(width=400)
                     dpg.add_text('学生编辑')
                     # dpg.add_text('作战计划')
                     dpg.bind_item_font(dpg.last_item(), cn_font_large)
@@ -2075,7 +2085,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                             sub_enemy_edit_window_refresh_sub_enemy_list()
 
                 with dpg.group():
-                    dpg.add_spacer(width=240)
+                    dpg.add_spacer(width=390)
                     dpg.add_text('其他单位编辑')
                     dpg.bind_item_font(dpg.last_item(), cn_font_large)
                     with dpg.group(horizontal=True):
@@ -2751,8 +2761,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 target = student_display_name if target=='自身' else target
                                 skl_type = mission.instance_dict[student_display_name].student.ns_type
                                 target_instance = mission.instance_dict[target]
-                                if type(target_instance)==Student_Skill_Timeline and skl_type=='伤害':
-                                    target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
+                                # if type(target_instance)==Student_Skill_Timeline and skl_type=='伤害':
+                                #     target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
                                 # target = mission.enemy.display_name if skl_type=='伤害' else target    # 新增支持其他敌人后，更新修正函数
                                 note = dpg.get_value(student_display_name+'_note')
                                 mission.add_student_ns(student_display_name, time_point, target, skl_type, note=note)
@@ -2763,8 +2773,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 target = student_display_name if target=='自身' else target
                                 skl_type = mission.instance_dict[student_display_name].student.ex_type
                                 target_instance = mission.instance_dict[target]
-                                if type(target_instance)==Student_Skill_Timeline and skl_type=='伤害':
-                                    target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
+                                # if type(target_instance)==Student_Skill_Timeline and skl_type=='伤害':
+                                #     target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
                                 # target = mission.enemy.display_name if skl_type=='伤害' else target    # 新增支持其他敌人后，更新修正函数
                                 note = dpg.get_value(student_display_name+'_note')
                                 mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
@@ -2775,8 +2785,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 target = student_display_name if target=='自身' else target
                                 skl_type = mission.instance_dict[student_display_name].student.ex_type
                                 target_instance = mission.instance_dict[target]
-                                if type(target_instance)==Student_Skill_Timeline and skl_type=='伤害':
-                                    target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
+                                # if type(target_instance)==Student_Skill_Timeline and skl_type=='伤害':
+                                #     target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
                                 # target = mission.enemy.display_name if skl_type=='伤害' else target    # 新增支持其他敌人后，更新修正函数
                                 note = dpg.get_value(student_display_name+'_note')
                                 mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
@@ -2787,8 +2797,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 target = student_display_name if target=='自身' else target
                                 skl_type = mission.instance_dict[student_display_name].student.ex_type
                                 target_instance = mission.instance_dict[target]
-                                if type(target_instance)==Student_Skill_Timeline and skl_type=='伤害':
-                                    target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
+                                # if type(target_instance)==Student_Skill_Timeline and skl_type=='伤害':
+                                #     target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
                                 # target = mission.enemy.display_name if skl_type=='伤害' else target    # 新增支持其他敌人后，更新修正函数
                                 note = dpg.get_value(student_display_name+'_note')
                                 mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
@@ -3067,7 +3077,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                                                 dpg.add_text(f'费用：{ex_info[5]}')
                                                                 dpg.add_text(f'学生：{ex_info[1]}')
                                                                 dpg.add_text(f'目标：{ex_info[2]}')
-                                                                dpg.add_text(f'实际生效时段：{second_to_minsec(ex_info[3])}-{second_to_minsec(ex_info[4])}')
+                                                                dpg.add_text(f'实际生效时段：{second_to_minsec(ex_info[3],2)}-{second_to_minsec(ex_info[4],2)}')
                                                                 dpg.add_text(f'类型：{ex_info[6]}')
                                                                 dpg.add_text(f'备注：{ex_info[7]}')
                                                             dpg.add_input_int(width=15, min_value=0, max_value=20, step=0, min_clamped=True, max_clamped=True, default_value=ex_info[5], user_data=ex_info, callback=skill_cost_input_change_callback)
@@ -3142,7 +3152,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                                                     else:
                                                                         target_display_name = ex[1].display_name
                                                                     dpg.add_text(f'目标：{target_display_name}')
-                                                                    dpg.add_text(f'EX生效时间段：{second_to_minsec(ex[2])}-{second_to_minsec(ex[3])}')
+                                                                    dpg.add_text(f'EX生效时间段：{second_to_minsec(ex[2],2)}-{second_to_minsec(ex[3],2)}')
                                                                     dpg.add_text(f'技能类型：{ex[5]}')
                                                                     dpg.add_text(f'备注：{ex[6]}')
                                                                 dpg.add_spacer(width=2)
@@ -3169,7 +3179,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                                                     else:
                                                                         target_display_name = ns[1].display_name
                                                                     dpg.add_text(f'目标：{target_display_name}')
-                                                                    dpg.add_text(f'NS生效时间段：{second_to_minsec(ns[2])}-{second_to_minsec(ns[3])}')
+                                                                    dpg.add_text(f'NS生效时间段：{second_to_minsec(ns[2],2)}-{second_to_minsec(ns[3],2)}')
                                                                     dpg.add_text(f'技能类型：{ns[4]}')
                                                                     dpg.add_text(f'备注：{ns[5]}')
                                                                 dpg.add_spacer(width=2)
@@ -3279,7 +3289,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                     with dpg.tooltip(dpg.last_item()):
                                         if sub_enemy_display_flag:
                                             dpg.add_text(f'单位：{buff[4]}')
-                                        dpg.add_text(f'buff时间段：{second_to_minsec(buff[0])}-{second_to_minsec(buff[1])}')
+                                        dpg.add_text(f'buff时间段：{second_to_minsec(buff[0],2)}-{second_to_minsec(buff[1],2)}')
                                         dpg.add_text(f'buff名：{buff[2]}')
                                         dpg.add_text(f'来源：{buff[3]}')
                                         
@@ -3296,11 +3306,12 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                         in_column_index = temp_student_buff_register_dict[buff[2]]
                                         start_time = buff[0]
                                         end_time = buff[1]
+                                        print(f'{buff[2]}:  {start_time}-{end_time}')
                                         pos_x, pos_y, bar_width, bar_height = buff_bar_pos_cal(column, in_column_index, start_time, end_time)
                                         dpg.add_button(width=bar_width, height=bar_height, pos=(pos_x,pos_y), parent='in_table_buff_group', user_data=[column, in_column_index, start_time])
                                         dpg.bind_item_theme(dpg.last_item(), buff[3]+'_theme')
                                         with dpg.tooltip(dpg.last_item()):
-                                            dpg.add_text(f'buff时间段：{second_to_minsec(buff[0])}-{second_to_minsec(buff[1])}')
+                                            dpg.add_text(f'buff时间段：{second_to_minsec(buff[0],2)}-{second_to_minsec(buff[1],2)}')
                                             dpg.add_text(f'buff名：{buff[2]}')
                                             dpg.add_text(f'来源：{buff[3]}')
                                             # dpg.add_text(f'{(pos_x, pos_y, bar_width, bar_height)}')    ##### debug用
@@ -3376,19 +3387,21 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                     start_time = event[0]
                                     end_time = event[1]
                                     pos_x, pos_y, bar_width, bar_height = event_bar_pos_cal(event_type, in_column_index, start_time, end_time)
-                                    dpg.add_button(width=bar_width, height=bar_height, pos=(pos_x,pos_y), parent='in_table_event_group', user_data=[event_type, in_column_index, start_time])
-                                    dpg.bind_item_theme(dpg.last_item(), event[2][:-3]+'_theme')
-                                    with dpg.tooltip(dpg.last_item()):
-                                        if sub_enemy_display_flag:
-                                            dpg.add_text(f'单位：{event[3]}')
-                                        dpg.add_text(f'受击时间段：{second_to_minsec(event[0])}-{second_to_minsec(event[1])}')
-                                        dpg.add_text(f'来源：{event[2]}')
+                                    bar_pos_y, bar_height = pos_y+18, bar_height-18
+                                    if bar_height>=5:    # 事件条高度超过5时才显示
+                                        dpg.add_button(width=bar_width, height=bar_height, pos=(pos_x,bar_pos_y), parent='in_table_event_group', user_data=[event_type, in_column_index, start_time])
+                                        dpg.bind_item_theme(dpg.last_item(), event[2][:-3]+'_theme')
+                                        with dpg.tooltip(dpg.last_item()):
+                                            if sub_enemy_display_flag:
+                                                dpg.add_text(f'单位：{event[3]}')
+                                            dpg.add_text(f'受击时间段：{second_to_minsec(event[0],2)}-{second_to_minsec(event[1],2)}')
+                                            dpg.add_text(f'来源：{event[2]}')
                                     dpg.add_button(label='hit', small=True, pos=(pos_x,pos_y), parent='in_table_event_group', user_data=[event_type, in_column_index, start_time])
                                     dpg.bind_item_theme(dpg.last_item(), event[2][:-3]+'_theme')
                                     with dpg.tooltip(dpg.last_item()):
                                         if sub_enemy_display_flag:
                                             dpg.add_text(f'单位：{event[3]}')
-                                        dpg.add_text(f'受击时间段：{second_to_minsec(event[0])}-{second_to_minsec(event[1])}')
+                                        dpg.add_text(f'受击时间段：{second_to_minsec(event[0],2)}-{second_to_minsec(event[1],2)}')
                                         dpg.add_text(f'来源：{event[2]}')
                                 event_count = -1
                                 for event in mission.enemy.event_timeline:
@@ -3399,16 +3412,18 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                     start_time = event[0]
                                     end_time = event[1]
                                     pos_x, pos_y, bar_width, bar_height = event_bar_pos_cal(event_type, in_column_index, start_time, end_time)
-                                    dpg.add_button(width=bar_width, height=bar_height, pos=(pos_x,pos_y), parent='in_table_event_group', user_data=[event_type, in_column_index, start_time])
-                                    dpg.bind_item_theme(dpg.last_item(), 'grey_transparent_button_theme')
-                                    with dpg.tooltip(dpg.last_item()):
-                                        dpg.add_text(f'事件时间段：{second_to_minsec(event[0])}-{second_to_minsec(event[1])}')
-                                        dpg.add_text(f'内容：{event[2]}')
+                                    bar_pos_y, bar_height = pos_y+18, bar_height-18
+                                    if bar_height>=5:    # 事件条高度超过5时才显示
+                                        dpg.add_button(width=bar_width, height=bar_height, pos=(pos_x,bar_pos_y), parent='in_table_event_group', user_data=[event_type, in_column_index, start_time])
+                                        dpg.bind_item_theme(dpg.last_item(), 'grey_transparent_button_theme')
+                                        with dpg.tooltip(dpg.last_item()):
+                                            dpg.add_text(f'事件时间段：{second_to_minsec(event[0],2)}-{second_to_minsec(event[1],2)}')
+                                            dpg.add_text(f'内容：{event[2]}')
                                     content = event[2] if len(event[2])<=4 else event[2][:4]
                                     temp_event_button = dpg.add_button(label=content, small=True, pos=(pos_x,pos_y), parent='in_table_event_group', user_data=[event_type, in_column_index, start_time])
                                     dpg.bind_item_theme(dpg.last_item(), 'grey_transparent_button_theme')
                                     with dpg.tooltip(dpg.last_item()):
-                                        dpg.add_text(f'事件时间段：{second_to_minsec(event[0])}-{second_to_minsec(event[1])}')
+                                        dpg.add_text(f'事件时间段：{second_to_minsec(event[0],2)}-{second_to_minsec(event[1],2)}')
                                         dpg.add_text(f'内容：{event[2]}')
                                         dpg.add_text('右键点击以删除该事件', color=(192,128,128))
                                     with dpg.item_handler_registry():
@@ -3528,6 +3543,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                     ['2024.10.25', 'v0.10.3', '新增撤销与重做功能'],
                     ['2024.10.28', 'v0.10.4', '优化作战计划中的事件显示'],
                     ['2024.10.29', 'v0.10.5', '新增支持添加其他单位（如奶奶灯、拘束弹控制器等）'],
+                    ['2024.11.1', '/', '2024.11.1-2024.11.3 很忙，在MHWS beta test里打放电纸飞机，什么事'],
+                    ['2024.11.4', 'v0.10.6', '实操模拟箭头bug修复，事件位置bug修复，事件条显示优化'],
                 ]
                 dpg.add_text("      时间                 版本号       内容")
                 with dpg.group(horizontal=True):
@@ -3544,8 +3561,15 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                             with dpg.group(horizontal=True):
                                 dpg.add_text(string_list[2])
                                 if len(string_list)>3:
-                                    dpg.add_button(label=string_list[3][0], small=True, callback=lambda:webbrowser.open(string_list[3][1]))
-                                    dpg.add_text(string_list[3][2])
+                                    if isinstance(string_list[3], list):
+                                        # dpg.add_text(string_list[2])
+                                        dpg.add_button(label=string_list[3][0], small=True, callback=lambda:webbrowser.open(string_list[3][1]))
+                                        dpg.add_text(string_list[3][2])
+                                    # elif string_list[3]=='grey':
+                                    #     dpg.add_text(string_list[2], color=(128,128,128))
+                                    # else:
+                                    #     dpg.add_text(string_list[2])
+
                                     
 
                 # dpg.add_text("      时间               版本号\t     内容")
@@ -3598,6 +3622,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                 dpg.add_text("【已完成】新增功能：作战计划页面新增撤销/重做功能，最多撤销15次：每次使用refresh_plan_table时，将当前mission.log存至栈中，并用另一个栈保存重做数据。refresh_battle_plan会清空栈", bullet=True)
                 dpg.add_text("【已完成】修改：敌人事件也改为长条按钮显示", bullet=True)
                 dpg.add_text("【已完成】新增功能：支持多个敌人，但敌人事件条和buff条还是一起显示", bullet=True)
+                dpg.add_text("【已完成】修改：事件条按钮消去重叠部分，即按需缩短长条部分的长度；xx.8时的事件所在格有错，查错", bullet=True)
+                # dpg.add_text("【摆了，偷偷注释掉】小bug修改：不显示其他单位受击和buff时，部分情况下第一个事件条/敌人buff条会有3像素左右的位移", bullet=True)
 
 
                 dpg.add_text("暂时无解问题：初始化较慢，且期间不能拖动窗口", bullet=True)
