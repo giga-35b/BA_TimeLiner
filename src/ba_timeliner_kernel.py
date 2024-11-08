@@ -259,24 +259,28 @@ class Mission:
         self.cost_direct = {}
         if not log['cost_timeline']:
             self.log['cost_timeline'] = []
-        elif type(log['cost_timeline'][0])==int:
+        elif type(log['cost_timeline'][0])==int or type(log['cost_timeline'][0])==float:
             self.log['cost_timeline'] = [log['cost_timeline']]
             item = log['cost_timeline']
             self.cost_timeline[item[0]] = item[1]
-        else:
+        elif isinstance(log['cost_timeline'][0], list):
             self.log['cost_timeline'] = log['cost_timeline']
             for item in log['cost_timeline']:
                 self.cost_timeline[item[0]] = item[1]
+        else:
+            warnings.warn("Wrong cost_timeline format", UserWarning)
         if not log['cost_direct']:
             self.log['cost_direct'] = []
-        elif type(log['cost_direct'][0])==int:
+        elif type(log['cost_direct'][0])==int or type(log['cost_direct'][0])==float:
             self.log['cost_direct'] = [log['cost_direct']]
             item = log['cost_direct']
             self.cost_direct[item[0]] = item[1]
-        else:
+        elif isinstance(log['cost_direct'][0], list):
             self.log['cost_direct'] = log['cost_direct']
             for item in log['cost_direct']:
                 self.cost_direct[item[0]] = item[1]
+        else:
+            warnings.warn("Wrong cost_direct format", UserWarning)
         self.file_name = log['file_name']
         self.mission_time = log['mission_time']
         self.cost_init_delay = log['cost_init_delay']
@@ -651,7 +655,7 @@ class Mission:
             cost=None
         if time in self.global_ex_time_list:
             warnings.warn("REJECTED: multiple ex at the exact same time", UserWarning)
-            return
+            return False
         target_instance = self.instance_dict[target]
         self.instance_dict[student_display_name].add_ex(time, cost=cost, target=target_instance, skl_type=skl_type, note=note)
         try:
@@ -659,6 +663,7 @@ class Mission:
         except:
             self.log['student_ex'] = [[student_display_name, time, cost, target, skl_type, note]]
         self.refresh_global_ex_timeline()
+        return True
 
     def remove_student_ex(self, student_display_name, time):
         self.instance_dict[student_display_name].remove_ex(time)
@@ -1026,7 +1031,10 @@ image_size = (50,45)
 #     int_array.resize(image_size)
 #     return int_array*16
 def load_2d_list_from_hex_str(input_str):
-    hex_data = input_str.split()  # 读取文件并按空格分割每个16进制值
+    if ' ' in input_str:
+        hex_data = input_str.split()  # 读取文件并按空格分割每个16进制值
+    else:
+        hex_data = [char for char in input_str]
     map_dict = {'0':0, '1':1*16, '2':2*16, '3':3*16, '4':4*16, '5':5*16, '6':6*16, '7':7*16, '8':8*16, '9':9*16, 'A':10*16, 'B':11*16, 'C':12*16, 'D':13*16, 'E':14*16, 'F':15*16}
     int_list = [map_dict[i] for i in hex_data]
     width, height = image_size
@@ -1063,7 +1071,7 @@ def create_image_from_2d_list(int_2d_list:list, output_image_path=None):
 
 
 def get_no_img_texture():
-    texture = "F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F B 5 4 B F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F E A 5 1 2 2 3 E F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F E 9 4 1 3 7 C 8 1 A F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F D 8 3 1 3 8 D F F D 3 5 F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F D 8 3 1 4 9 D F F F F F 7 1 B F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F C 7 2 1 4 9 E F F F F F F F C 2 5 F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F B 6 2 1 5 A F F F F F F F F F F F 6 1 B F F F F F F F F F F F F F F F F F F F F F F F F F F F F B 5 1 2 5 B F F F F F F F F F F F F F C 2 6 F F F F F F F F F F F F F F F F F F F F F F F F F E A 5 1 2 6 C F F F F F F F F F F F F F F F F 5 2 C F F F F F F F F F F F F F F F F F F F F F F E 9 4 1 3 7 C F F F F F F F F F F F F F F F F F F B 1 6 F F F F F F F F F F F F F F F F F F F F D 8 3 1 3 8 D F F F F F F F F F F F F F F F F F F F F F 5 3 D F F F F F F F F F F F F F F F F F D 8 3 1 4 9 E F F F F F F F F F F F F F F F F F F F F F F F F E F F F F F F F F F F F F F F F F C 7 2 1 4 A E F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F B 6 2 1 5 A F F F F F F F F F F F F F F F F F F F F F F F F F F F B 9 8 8 A D F F F F F F F F F D 5 2 2 6 B F F F F F F F F F F F F F F F F F F F F F F F F F F F A 4 1 1 2 1 1 3 7 E F F F F F F F 6 2 6 C F F F F F F F F F F F F F F F F F E F F F F F F F F F F 6 1 3 7 B C C 9 5 2 3 C F F F F F F 7 1 B F F F F F F F F F F F F F F F F F B 3 6 B F F F F F F F 6 1 6 D F F F F F F 9 2 3 C F F F F F C 2 6 F F F F F F F D 7 6 C F F F F F F 6 3 2 2 4 8 D F F F 9 1 6 F F B 8 F F F F F A 2 5 F F F F F F 5 2 C F F F F F F 4 2 3 3 D F F F F D 3 4 8 6 3 2 1 B F E 4 3 D F F 4 1 C F F F F F 7 1 B F F F F F B 1 7 F F F F F C 2 3 4 2 B F F F F 9 2 7 C B A 8 4 C F B 1 8 F F F B 1 7 F F F F F C 2 6 F F F F F F 5 2 D F F F F E 4 2 2 3 D F F F F 5 3 9 C B C C B F F 9 1 B F F F F 5 3 D F F F F F 4 4 F F F F F F A 1 8 F F F F F D 7 7 C F F F F D 2 5 B B B B B C F F 7 2 C F F F F A 1 7 F F F F F 5 4 E F F F F F F 4 3 D F F F F F F F F F F F F 8 2 8 C B B B B C F F 8 1 C F F F F E 3 5 F F F F F 5 4 F F F F F F F 9 1 8 F F F F F F F F F F F F 4 3 A C B B B B B F F A 0 A F F F F F D B C F F F E 3 5 F F F F F F F E 3 3 E F F F F F F F F F F B 2 6 B B B B B B B E F D 2 5 F F F F F F 4 0 B F F A 1 8 F F F F F F F F 8 1 9 F F F F F F F F F F 7 2 8 C B B B B B B D F F 6 2 A F F F F F 5 2 C F E 4 2 D F F F F F F F F D 3 4 F F F F F F F F F E 3 4 B C B B B B B B B F F D 3 2 A F F F F F E F E 5 1 9 F F F F F F F F F F 8 1 A F F F F F F F F A 2 6 C B B B B B B B B D F F B 2 2 8 D F F F E A 4 1 7 F F F F F F F F F F F D 3 5 F F F F F F F F 5 2 9 C B B B B B B B B B E F F C 4 1 2 4 6 5 3 1 3 9 F F F F F F F F F F F F F 7 1 B F F F F F F D 3 5 B B B B B B B B B B B B E F F F A 6 4 3 3 5 8 D F F F F F F F F F F F F F F C 2 5 F F F F F F 9 2 7 C B B B B B B B B B C C A B F F F F E E E F F F F F F F F F F F F F F F F F F 6 2 B F F F F F 5 3 A C B B B B B B B C C A 7 4 1 4 C F F F F F F F F F F F F F F F F F F F F F F F B 2 6 F F F F C 2 5 B B B B B B B C C A 7 3 2 3 7 C F F F F F F F F F F F F F F F F F F F F F F F F F 5 2 C F F F 7 2 8 C B B B B C B A 7 3 2 3 8 D F F F F F F F F F F F F F F F F F F F F F F F F F F F B 1 7 F F E 4 4 A C B B C B 9 6 3 2 4 9 D F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F 5 2 D F B 2 6 B C C B 8 5 3 2 4 9 E F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F A 1 8 F 7 2 9 C B 8 5 2 2 5 A F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F 4 4 A 4 5 A 8 5 2 2 5 B F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F 9 2 3 3 5 4 2 2 6 C F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F E 3 3 3 2 3 7 C F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F A 3 3 8 D F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F E E F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F F"
+    texture = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFB54BFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEA51223EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE94137C81AFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD83138DFFD35FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD83149DFFFFF71BFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC72149EFFFFFFFC25FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFB6215AFFFFFFFFFFF61BFFFFFFFFFFFFFFFFFFFFFFFFFFFFB5125BFFFFFFFFFFFFFC26FFFFFFFFFFFFFFFFFFFFFFFFFEA5126CFFFFFFFFFFFFFFFF52CFFFFFFFFFFFFFFFFFFFFFFE94137CFFFFFFFFFFFFFFFFFFB16FFFFFFFFFFFFFFFFFFFFD83138DFFFFFFFFFFFFFFFFFFFFF53DFFFFFFFFFFFFFFFFFD83149EFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFC7214AEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFB6215AFFFFFFFFFFFFFFFFFFFFFFFFFFFB988ADFFFFFFFFFD5226BFFFFFFFFFFFFFFFFFFFFFFFFFFFA41121137EFFFFFFF626CFFFFFFFFFFFFFFFFFEFFFFFFFFFF6137BCC9523CFFFFFF71BFFFFFFFFFFFFFFFFFB36BFFFFFFF616DFFFFFF923CFFFFFC26FFFFFFFD76CFFFFFF632248DFFF916FFB8FFFFFA25FFFFFF52CFFFFFF4233DFFFFD3486321BFE43DFF41CFFFFF71BFFFFFB17FFFFFC2342BFFFF927CBA84CFB18FFFB17FFFFFC26FFFFFF52DFFFFE4223DFFFF539CBCCBFF91BFFFF53DFFFFF44FFFFFFA18FFFFFD77CFFFFD25BBBBBCFF72CFFFFA17FFFFF54EFFFFFF43DFFFFFFFFFFFF828CBBBBCFF81CFFFFE35FFFFF54FFFFFFF918FFFFFFFFFFFF43ACBBBBBFFA0AFFFFFDBCFFFE35FFFFFFFE33EFFFFFFFFFFB26BBBBBBBEFD25FFFFFF40BFFA18FFFFFFFF819FFFFFFFFFF728CBBBBBBDFF62AFFFFF52CFE42DFFFFFFFFD34FFFFFFFFFE34BCBBBBBBBFFD32AFFFFFEFE519FFFFFFFFFF81AFFFFFFFFA26CBBBBBBBBDFFB228DFFFEA417FFFFFFFFFFFD35FFFFFFFF529CBBBBBBBBBEFFC4124653139FFFFFFFFFFFFF71BFFFFFFD35BBBBBBBBBBBBEFFFA643358DFFFFFFFFFFFFFFC25FFFFFF927CBBBBBBBBBCCABFFFFEEEFFFFFFFFFFFFFFFFFF62BFFFFF53ACBBBBBBBCCA7414CFFFFFFFFFFFFFFFFFFFFFFFB26FFFFC25BBBBBBBCCA73237CFFFFFFFFFFFFFFFFFFFFFFFFF52CFFF728CBBBBCBA73238DFFFFFFFFFFFFFFFFFFFFFFFFFFFB17FFE44ACBBCB963249DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF52DFB26BCCB853249EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFA18F729CB85225AFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF44A45A85225BFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF923354226CFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE333237CFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFA338DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
     return texture
 
 # restored_array = load_2d_list_from_hex_str(get_no_img_texture())

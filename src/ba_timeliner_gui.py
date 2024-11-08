@@ -7,20 +7,23 @@ import time
 import pyperclip
 import tkinter as tk
 from tkinter import filedialog
+from copy import deepcopy
 # from PIL import Image
 
 from ba_timeliner_kernel import *
     
-BATL_VERSION = '0.10.6'
+BATL_VERSION = '0.10.8'
+IS_RELEASE_VERSION = False
 
 # 替换输出至debug_log 第1部分
 output = io.StringIO()
 sys.stdout = output
 sys.stderr = output
 # 替换输出至debug_log 提前终止
-sys.stdout = sys.__stdout__
-sys.stderr = sys.__stderr__
-output.close()
+if not IS_RELEASE_VERSION:
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+    output.close()
 
 
 folder_path_1 = './student_files/'
@@ -201,6 +204,8 @@ with dpg.theme(tag='main_theme_2'):
         dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 0, category=dpg.mvThemeCat_Core)
     with dpg.theme_component(dpg.mvCombo):
         dpg.add_theme_color(dpg.mvThemeCol_Header, (96, 192, 248), category=dpg.mvThemeCat_Core)
+    with dpg.theme_component(dpg.mvCollapsingHeader):
+        dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 0, category=dpg.mvThemeCat_Core)
     with dpg.theme_component(dpg.mvFileDialog):
         dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (96, 192, 248), category=dpg.mvThemeCat_Core)
         dpg.add_theme_color(dpg.mvThemeCol_FrameBgActive, (96, 192, 248), category=dpg.mvThemeCat_Core)
@@ -391,14 +396,14 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             dpg.add_text("自行摸轴")
             dpg.bind_item_font(dpg.last_item(), cn_font_large)
             dpg.add_text("\t\t第一步（可选）：在“学生创建/编辑”页中创建或编辑学生，并保存至本地")
-            dpg.add_text("\t\t第二步：在“作战时间轴”页中输入关卡敌人数据，并选择上场学生")
+            dpg.add_text("\t\t第二步：在“作战计划”页中输入关卡与敌人数据，并选择上场学生")
             dpg.add_text("\t\t第三步：摸轴，参考页面上各信息，根据需要进行添加ex、添加ns、设置费用等操作\n        建议先在游戏内模拟并摸清ns轴和事件轴并填入计划，再开始规划ex轴")
             dpg.add_text("\t\t第四步：参照页面上的计划和实操辅助在游戏内开票凹总力，或导出作业至.csv文件")
             dpg.add_spacer(height=5)
             dpg.add_text("作业导入")
             dpg.bind_item_font(dpg.last_item(), cn_font_large)
             dpg.add_text("\t\t第一步：预先在本地准备好作业（作战计划文件，.csv格式）")
-            dpg.add_text("\t\t第二步：在“作战时间轴”页中选择作业数据文件并导入")
+            dpg.add_text("\t\t第二步：在“作战计划”页中选择作业数据文件并导入")
             dpg.add_text("\t\t第三步：抄作业，参照页面上的计划和实操辅助在游戏内开票凹总力，或根据需要对其进行修改")
             dpg.add_separator()
             dpg.add_spacer(height=20)
@@ -536,7 +541,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             
             def student_file_selector_cn_path():
                 current_dir = os.getcwd()
-                if is_valid_english_path(current_dir):
+                if is_valid_english_path(current_dir) and (not IS_RELEASE_VERSION):
                     dpg.show_item("student_file_dialog")
                 else:
                     # 初始化Tkinter窗口（隐藏主窗口）
@@ -572,6 +577,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             with dpg.window(label="保存失败", width=240, height=120, modal=True, show=False, tag="student_no_file_name_popup", pos=(300,200)):
                 with dpg.group(horizontal=True):
                     dpg.add_image('wtf_bro_img_texture')
+                    with dpg.tooltip(dpg.last_item()):
+                        dpg.add_text('布什·戈门')
                     with dpg.group():
                         dpg.add_text("学生名不能为空!")
                         dpg.add_button(label="确认", width=50, height=30, callback=lambda: dpg.hide_item("student_no_file_name_popup"))
@@ -623,7 +630,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                 dpg.bind_item_font(dpg.last_item(), cn_font_large)
                 dpg.add_text('[?]')
                 with dpg.tooltip(dpg.last_item()):
-                    dpg.add_text("可以使用默认值，不会影响时间轴模拟，仅保存信息")
+                    dpg.add_text("除部分技能等级外，都可以使用默认值，不会影响时间轴模拟，仅保存信息")
             with dpg.group(horizontal=True):
                 with dpg.group():
                     with dpg.group(horizontal=True):
@@ -636,7 +643,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                         dpg.add_spacer(width=30)
                         dpg.add_color_edit((255, 255, 255), label="颜色", width=200, no_alpha=True, no_inputs=False, source='temp_student_variable_color')
                         with dpg.tooltip(dpg.last_item()):
-                            dpg.add_text("用于作战时间轴中的显示")
+                            dpg.add_text("用于作战计划时间轴中的显示")
                         dpg.add_spacer(width=30)
                         dpg.add_text('选择预设颜色：')
                         with dpg.theme(tag='通常按钮主题'):
@@ -814,7 +821,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             ]
         }
         """
-        with dpg.tab(label="作战时间轴"):
+        with dpg.tab(label="作战计划"):
             temp_mission_log = {
                 'file_name': '',
                 'mission_time': 240,
@@ -839,7 +846,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                 global mission_log_undo_list
                 global mission_log_redo_list
                 global mission_log_undo_buffer
-                backup_mission_log = mission.log.copy()
+                # backup_mission_log = mission.log.copy()
+                backup_mission_log = deepcopy(mission.log)
                 try:
                     if not mission_log_undo_list:
                         print('mission_log_undo_list is empty, cannot undo')
@@ -874,7 +882,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                 global mission_log_undo_list
                 global mission_log_redo_list
                 global mission_log_undo_buffer
-                backup_mission_log = mission.log.copy()
+                # backup_mission_log = mission.log.copy()
+                backup_mission_log = deepcopy(mission.log)
                 try:
                     if not mission_log_redo_list:
                         print('mission_log_redo_list is empty, cannot redo')
@@ -972,6 +981,10 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                 temp_mission_log['cost_timeline'] = [[temp_mission_log['mission_time'],0], [temp_mission_log['mission_time']-temp_mission_log['cost_init_delay'],4200]]
                 mission = Mission(log=temp_mission_log)
                 refresh_battle_plan()
+            def set_mission_file_name_calllback():
+                global mission
+                mission.set_file_name(dpg.get_value('temp_mission_variable_0'))
+                refresh_battle_plan()
             def set_mission_enemy_name_callback():
                 global mission
                 mission.change_enemy_name(dpg.get_value('temp_mission_variable_3'))
@@ -1013,7 +1026,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             
             def mission_file_selector_cn_path():
                 current_dir = os.getcwd()
-                if is_valid_english_path(current_dir):
+                if is_valid_english_path(current_dir) and (not IS_RELEASE_VERSION):
                     dpg.show_item("mission_file_dialog")
                 else:
                     # 初始化Tkinter窗口（隐藏主窗口）
@@ -1031,7 +1044,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             
             def student_file_selector_cn_path_2():
                 current_dir = os.getcwd()
-                if is_valid_english_path(current_dir):
+                if is_valid_english_path(current_dir) and (not IS_RELEASE_VERSION):
                     dpg.show_item("student_file_dialog_2")
                 else:
                     # 初始化Tkinter窗口（隐藏主窗口）
@@ -1052,12 +1065,19 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             with dpg.window(label="保存失败", width=240, height=120, modal=True, show=False, tag="mission_no_file_name_popup", pos=(300,200)):
                 with dpg.group(horizontal=True):
                     dpg.add_image('wtf_bro_img_texture')
+                    with dpg.tooltip(dpg.last_item()):
+                        dpg.add_text('布什·戈门')
                     with dpg.group():
                         dpg.add_text("保存文件名不能为空!")
                         dpg.add_button(label="确认", width=50, height=30, callback=lambda: dpg.hide_item("mission_no_file_name_popup"))
-            with dpg.window(label="已存在同名学生", width=250, height=100, modal=True, show=False, tag="same_name_student_existed_popup", pos=(300,200)):
-                dpg.add_text("当前已存在同名学生，请重新选择！")
-                dpg.add_button(label="确认", width=50, height=30, callback=lambda: dpg.hide_item("same_name_student_existed_popup"))
+            with dpg.window(label="已存在同名学生", width=300, height=120, modal=True, show=False, tag="same_name_student_existed_popup", pos=(300,200)):
+                with dpg.group(horizontal=True):
+                    dpg.add_image('wtf_bro_img_texture')
+                    with dpg.tooltip(dpg.last_item()):
+                        dpg.add_text('布什·戈门')
+                    with dpg.group():
+                        dpg.add_text("当前已存在同名学生，请重新选择！")
+                        dpg.add_button(label="确认", width=50, height=30, callback=lambda: dpg.hide_item("same_name_student_existed_popup"))
             with dpg.window(label="即将覆盖文件", width=300, height=100, modal=True, show=False, tag="mission_overwrite_warning_popup", pos=(250,200)):
                 dpg.add_text("检测到存在同名文件，是否保存覆盖？")
                 with dpg.group(horizontal=True):
@@ -1067,6 +1087,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             with dpg.window(label="学生数量已达6人上限", width=540, height=130, modal=True, show=False, tag="student_overloading_popup", pos=(300,200)):
                 with dpg.group(horizontal=True):
                     dpg.add_image('wtf_bro_img_texture')
+                    with dpg.tooltip(dpg.last_item()):
+                        dpg.add_text('你想干嘛？')
                     with dpg.group():
                         dpg.add_text("警告：继续添加学生将使数量超过6名，部分功能受限制，是否继续？")
                         dpg.add_text("（注：若需进行制约解除决战，请勾选右上方“制约解除决战”选项")
@@ -1078,6 +1100,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             with dpg.window(label="学生数量已达10人上限", width=360, height=130, modal=True, show=False, tag="student_overloading_popup_2", pos=(300,200)):
                 with dpg.group(horizontal=True):
                     dpg.add_image('wtf_bro_img_texture')
+                    with dpg.tooltip(dpg.last_item()):
+                        dpg.add_text('你想干嘛？')
                     with dpg.group():
                         dpg.add_text("警告：继续添加学生将使数量超过10名！")
                         dpg.add_text("    部分功能将出现异常，是否继续？")
@@ -1123,7 +1147,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             dpg.bind_item_font(dpg.last_item(), cn_font_large)
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=30)
-                dpg.add_input_text(label='保存文件名', width=150, source='temp_mission_variable_0')
+                dpg.add_input_text(label='保存文件名', width=150, source='temp_mission_variable_0', callback=set_mission_file_name_calllback)
                 with dpg.tooltip(dpg.last_item()):
                     dpg.add_text("无需文件后缀")
                 dpg.add_spacer(width=20)
@@ -2207,14 +2231,17 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 multi_id_display_name = display_name
                                 break
                         if multi_id_warning_flag:
-                            with dpg.window(label="学生名识别失败：同学生多个关键词", width=540, height=130, modal=True, tag='cost_auto_set_confirm_window', pos=(300,200), on_close=lambda:dpg.delete_item('cost_auto_set_confirm_window')):
+                            with dpg.window(label="学生名识别失败：同学生多个关键词", width=400, height=130, modal=True, tag='cost_auto_set_confirm_window', pos=(300,200), on_close=lambda:dpg.delete_item('cost_auto_set_confirm_window')):
                                 with dpg.group(horizontal=True):
                                     dpg.add_image('wtf_bro_img_texture')
+                                    with dpg.tooltip(dpg.last_item()):
+                                        dpg.add_text('（你是来找茬的吗（半恼')
                                     with dpg.group():
-                                        dpg.add_text(f"学生 {multi_id_display_name} 的学生名中包含多个关键词，请修改其学生名后重试")
-                                        dpg.add_text("（你是来找茬的吗（半恼")
+                                        dpg.add_text(f"学生【{multi_id_display_name}】的学生名中包含多个关键词")
+                                        dpg.add_text("请修改其学生名后重试")
+                                        # dpg.add_text("（你是来找茬的吗（半恼")
                                         dpg.add_button(label="关闭", width=50, height=30, callback=lambda:dpg.delete_item('cost_auto_set_confirm_window'))
-                        if changed_flag:
+                        elif changed_flag:
                             with dpg.window(label="费用轴设置预览", width=800, height=600, modal=True, tag='cost_auto_set_confirm_window', pos=(200,100), on_close=lambda:dpg.delete_item('cost_auto_set_confirm_window')):
                                 def get_new_cost_timeline():
                                     mission_time = mission.mission_time
@@ -2317,6 +2344,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                             with dpg.window(label="费用轴无修改", width=540, height=130, modal=True, tag='cost_auto_set_confirm_window', pos=(300,200), on_close=lambda:dpg.delete_item('cost_auto_set_confirm_window')):
                                 with dpg.group(horizontal=True):
                                     dpg.add_image('wtf_bro_img_texture')
+                                    with dpg.tooltip(dpg.last_item()):
+                                        dpg.add_text('李在赣神魔？')
                                     with dpg.group():
                                         dpg.add_text("未识别到会对费用轴产生影响的学生，费用轴保持不变")
                                         dpg.add_button(label="关闭", width=50, height=30, callback=lambda:dpg.delete_item('cost_auto_set_confirm_window'))
@@ -2396,7 +2425,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                     with dpg.group(horizontal=True, parent='battle_plan_group'):
                         dpg.add_text('控制台及作战计划')
                         dpg.bind_item_font(dpg.last_item(), cn_font_large)
-                        dpg.add_text('[?]')
+                        dpg.add_text('[简要说明]')
                         with dpg.tooltip(dpg.last_item()):
                             dpg.add_text("拖动NS,EX按钮至计划表内以设置技能")
                             dpg.add_text("费用设置和敌人事件设置同理")
@@ -2745,6 +2774,17 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                             else:
                                 print('wrong cost command')
                         def skill_drop_callback(sender, app_data):
+                            def ex_time_collide_popup():
+                                with dpg.window(label="设置EX失败", width=360, height=150, modal=True, tag="ex_time_collide_popup", pos=(300,200), on_close=lambda: dpg.delete_item("ex_time_collide_popup")):
+                                    with dpg.group(horizontal=True):
+                                        dpg.add_image('wtf_bro_img_texture')
+                                        with dpg.tooltip(dpg.last_item()):
+                                            dpg.add_text("为防止EX索引错误，本工具不支持同一时刻安排复数EX，请谅解orz")
+                                        with dpg.group():
+                                            dpg.add_text("该时间点已有另一EX技能！")
+                                            dpg.add_text("若需要短时间内设置多次EX，\n请调小每格时间跨度后再分格连续设置")
+                                            dpg.add_button(label="确认", width=50, height=30, callback=lambda: dpg.delete_item("ex_time_collide_popup"))
+
                             mission_time = mission.mission_time
                             time_unit = float(dpg.get_value('table_time_unit'))
                             index = table_cell_list_1.index(sender)
@@ -2777,8 +2817,11 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 #     target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
                                 # target = mission.enemy.display_name if skl_type=='伤害' else target    # 新增支持其他敌人后，更新修正函数
                                 note = dpg.get_value(student_display_name+'_note')
-                                mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
-                                refresh_plan_table()
+                                add_result = mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
+                                if not add_result:
+                                    ex_time_collide_popup()
+                                else:
+                                    refresh_plan_table()
                             elif operation=='add_ex_half_cost':
                                 cost = int(dpg.get_value(student_display_name+'_ex_cost')/2+0.5)
                                 target = dpg.get_value(student_display_name+'_target')
@@ -2789,8 +2832,11 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 #     target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
                                 # target = mission.enemy.display_name if skl_type=='伤害' else target    # 新增支持其他敌人后，更新修正函数
                                 note = dpg.get_value(student_display_name+'_note')
-                                mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
-                                refresh_plan_table()
+                                add_result = mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
+                                if not add_result:
+                                    ex_time_collide_popup()
+                                else:
+                                    refresh_plan_table()
                             elif operation=='add_ex_reduced_cost':
                                 cost = dpg.get_value(student_display_name+'_ex_cost')-1
                                 target = dpg.get_value(student_display_name+'_target')
@@ -2801,8 +2847,11 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 #     target = mission.enemy.display_name                                 # 现在只有目标为学生、类型为伤害时才会强制将目标改为敌人
                                 # target = mission.enemy.display_name if skl_type=='伤害' else target    # 新增支持其他敌人后，更新修正函数
                                 note = dpg.get_value(student_display_name+'_note')
-                                mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
-                                refresh_plan_table()
+                                add_result = mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
+                                if not add_result:
+                                    ex_time_collide_popup()
+                                else:
+                                    refresh_plan_table()
                             elif operation=='set_ex':
                                 # [time, name, target_name, start_time, end_time, cost, skl_type, note]
                                 last_time_point = ex_info[0]
@@ -2810,9 +2859,12 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 target = ex_info[2]
                                 skl_type = ex_info[6]
                                 note = ex_info[7]
-                                mission.remove_student_ex(student_display_name, last_time_point)
-                                mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
-                                refresh_plan_table()
+                                add_result = mission.add_student_ex(student_display_name, time_point, cost, target, skl_type, note=note)
+                                if not add_result:
+                                    ex_time_collide_popup()
+                                else:
+                                    mission.remove_student_ex(student_display_name, last_time_point)
+                                    refresh_plan_table()
                             else:
                                 print('wrong cost command')
                         def skill_button_right_click_callback(sender, app_data, user_data):
@@ -2854,11 +2906,13 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                             if not do_type:
                                 if not mission_log_undo_list:
                                     mission_log_undo_list.append(mission_log_undo_buffer)
-                                    mission_log_undo_buffer = mission.log.copy()
+                                    # mission_log_undo_buffer = mission.log.copy()
+                                    mission_log_undo_buffer = deepcopy(mission.log)
                                     mission_log_redo_list = []
-                                elif mission.log!=mission_log_undo_list[-1]:
+                                elif mission.log!=mission_log_undo_buffer:
                                     mission_log_undo_list.append(mission_log_undo_buffer)
-                                    mission_log_undo_buffer = mission.log.copy()
+                                    # mission_log_undo_buffer = mission.log.copy()
+                                    mission_log_undo_buffer = deepcopy(mission.log)
                                     mission_log_redo_list = []
                                 if len(mission_log_undo_list)>=16:
                                     mission_log_undo_list.pop(0)
@@ -3306,7 +3360,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                         in_column_index = temp_student_buff_register_dict[buff[2]]
                                         start_time = buff[0]
                                         end_time = buff[1]
-                                        print(f'{buff[2]}:  {start_time}-{end_time}')
+                                        # print(f'{buff[2]}:  {start_time}-{end_time}')    # debug用
                                         pos_x, pos_y, bar_width, bar_height = buff_bar_pos_cal(column, in_column_index, start_time, end_time)
                                         dpg.add_button(width=bar_width, height=bar_height, pos=(pos_x,pos_y), parent='in_table_buff_group', user_data=[column, in_column_index, start_time])
                                         dpg.bind_item_theme(dpg.last_item(), buff[3]+'_theme')
@@ -3525,10 +3579,10 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                     ['2024.8.30', '/', '开始内核开发'],
                     ['2024.9.4', '/', '开始GUI开发'],
                     ['2024.9.6', '/', '完成GUI-学生编辑页面'],
-                    ['2024.9.11', '/', '完成GUI-作战时间轴页面-外观'],
-                    ['2024.9.12', '/', '完成GUI-作战时间轴页面-功能'],
+                    ['2024.9.11', '/', '完成GUI-作战计划页面-外观'],
+                    ['2024.9.12', '/', '完成GUI-作战计划页面-功能'],
                     ['2024.9.13', 'v0.5.0', '完成第一个功能测试版'],
-                    ['2024.9.16', 'v0.6.0', '完成作战时间轴buff显示优化，极大幅提升性能（约5-10倍）'],
+                    ['2024.9.16', 'v0.6.0', '完成作战计划时间轴buff显示优化，极大幅提升性能（约5-10倍）'],
                     ['2024.9.17', 'v0.7.0', '新增人数上限提示、实操参考面板等功能，新增支持窗口缩放'],
                     ['2024.9.19', 'v0.8.0', '新增实操模拟等功能'],
                     ['2024.9.21', 'v0.8.2', 'bug修复&细节优化'],
@@ -3543,8 +3597,10 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                     ['2024.10.25', 'v0.10.3', '新增撤销与重做功能'],
                     ['2024.10.28', 'v0.10.4', '优化作战计划中的事件显示'],
                     ['2024.10.29', 'v0.10.5', '新增支持添加其他单位（如奶奶灯、拘束弹控制器等）'],
-                    ['2024.11.1', '/', '2024.11.1-2024.11.3 很忙，在MHWS beta test里打放电纸飞机，什么事'],
+                    ['2024.11.1', '/', '2024.11.1-2024.11.3 很忙，在MHWS beta里用铳炮太刀打放电纸飞机，什么事'],
                     ['2024.11.4', 'v0.10.6', '实操模拟箭头bug修复，事件位置bug修复，事件条显示优化'],
+                    ['2024.11.7', 'v0.10.7', '撤销重做功能bug修复，新增设置EX失败的提示'],
+                    ['2024.11.8', 'v0.10.8', '部分说明文案调整'],
                 ]
                 dpg.add_text("      时间                 版本号       内容")
                 with dpg.group(horizontal=True):
@@ -3624,6 +3680,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                 dpg.add_text("【已完成】新增功能：支持多个敌人，但敌人事件条和buff条还是一起显示", bullet=True)
                 dpg.add_text("【已完成】修改：事件条按钮消去重叠部分，即按需缩短长条部分的长度；xx.8时的事件所在格有错，查错", bullet=True)
                 # dpg.add_text("【摆了，偷偷注释掉】小bug修改：不显示其他单位受击和buff时，部分情况下第一个事件条/敌人buff条会有3像素左右的位移", bullet=True)
+                dpg.add_text("【已完成】新增功能：若添加EX时被拒绝，则弹出窗口提示添加失败原因（添加多个EX至同一时刻）", bullet=True)
 
 
                 dpg.add_text("暂时无解问题：初始化较慢，且期间不能拖动窗口", bullet=True)
@@ -3719,7 +3776,7 @@ while dpg.is_dearpygui_running():
             dpg.set_value('copied_text', '')
             copied_text_frame_count = 0
     
-    # 作战时间轴页面，buff条随列宽变动而改变位置
+    # 作战计划时间轴页面，buff条随列宽变动而改变位置
     if frame_count>=60 and not dpg.does_item_exist('temp_spacer') and dpg.does_item_exist(column_2_width_container):
         column_0_width = dpg.get_item_state(column_0_width_container)["content_region_avail"][0]
         column_1_width = dpg.get_item_state(column_1_width_container)["content_region_avail"][0]
@@ -3761,7 +3818,7 @@ while dpg.is_dearpygui_running():
                     dpg.set_item_pos(item, (event_bar_pos_x_cal(event_type, in_column_index),original_pos[1]))
             # print('pos_x_reset')
 
-    # 作战时间轴页面，作战计划窗口高度随BATL窗口高度改变而改变
+    # 作战计划时间轴页面，作战计划窗口高度随BATL窗口高度改变而改变
     if frame_count>=60:
         vp_height = dpg.get_viewport_height()
         if vp_height!=last_vp_height:
