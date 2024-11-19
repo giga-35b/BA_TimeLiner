@@ -12,7 +12,7 @@ from copy import deepcopy
 
 from ba_timeliner_kernel import *
     
-BATL_VERSION = '0.10.8'
+BATL_VERSION = '0.10.9'
 IS_RELEASE_VERSION = False
 
 # 替换输出至debug_log 第1部分
@@ -74,6 +74,8 @@ def set_font(path):
             dpg.add_char_remap(0x3084, 0x0025)
             # 添加制表符
             dpg.add_font_range(0x2500, 0x257f)
+            # 带圈数字1-16
+            dpg.add_font_range(0x2460, 0x2470)
         with dpg.font(path, 9, default_font=False) as cn_font_tiny:
             dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
             dpg.add_font_range_hint(dpg.mvFontRangeHint_Chinese_Full)
@@ -368,8 +370,12 @@ def load_image_to_texture_registry(img_path, texture_name=None, size=(96,96), cr
     
 dont_move_img_path = './texture_files/others/dont_move.png'
 wtf_bro_img_path = './texture_files/others/wtf_bro.png'
+quick_intro_2 = './texture_files/others/quick_intro_2.png'
+quick_intro_3 = './texture_files/others/quick_intro_3.png'
 load_image_to_texture_registry(dont_move_img_path, texture_name='dont_move_img_texture', size=(240,120), crop=False)
 load_image_to_texture_registry(wtf_bro_img_path, texture_name='wtf_bro_img_texture', size=(80,80))
+load_image_to_texture_registry(quick_intro_2, texture_name='quick_intro_2_texture', size=(800,300), crop=False)
+load_image_to_texture_registry(quick_intro_3, texture_name='quick_intro_3_texture', size=(800,300), crop=False)
 # load_image_to_texture_registry(dont_move_img_path, size=(240,120))
 # dont_move_img_flattened = crop_and_resize_image(dont_move_img_path, size=(96,96))
 # dpg.add_static_texture(96, 96, dont_move_img_flattened, tag="dont_move_img_texture")
@@ -388,25 +394,47 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             dpg.add_spacer(height=5)
             dpg.add_text("本工具的适用对象包括但不限于：总力战、大决战、制约解除决战等战斗")
             dpg.add_text("本工具的功能包括但不限于：战斗的自行摸轴、实操辅助、作业导入/导出")
-            dpg.add_spacer(height=20)
+            dpg.add_spacer(height=10)
             dpg.add_text("快速入门")
             dpg.bind_item_font(dpg.last_item(), cn_font_huge)
             dpg.add_separator()
             dpg.add_spacer(height=5)
-            dpg.add_text("自行摸轴")
-            dpg.bind_item_font(dpg.last_item(), cn_font_large)
-            dpg.add_text("\t\t第一步（可选）：在“学生创建/编辑”页中创建或编辑学生，并保存至本地")
-            dpg.add_text("\t\t第二步：在“作战计划”页中输入关卡与敌人数据，并选择上场学生")
-            dpg.add_text("\t\t第三步：摸轴，参考页面上各信息，根据需要进行添加ex、添加ns、设置费用等操作\n        建议先在游戏内模拟并摸清ns轴和事件轴并填入计划，再开始规划ex轴")
-            dpg.add_text("\t\t第四步：参照页面上的计划和实操辅助在游戏内开票凹总力，或导出作业至.csv文件")
+            with dpg.group(horizontal=True):
+                with dpg.group():
+                    dpg.add_text("自行摸轴")
+                    dpg.bind_item_font(dpg.last_item(), cn_font_large)
+                    dpg.add_text("\t\t1.（可选）在“学生创建/编辑”页中创建或编辑学生，并保存至本地(下图中①②③)")
+                    dpg.add_text("\t\t2.  在“作战计划”页中输入关卡敌人数据，并选择上场学生(下图中④⑤⑥)")
+                    dpg.add_text("\t\t3.  摸轴，参考页面上各信息，根据需要进行添加ex、添加ns、设置费用等操作(⑦)\n        建议先在游戏内模拟并摸清ns轴和事件轴并填入计划，再开始规划ex轴")
+                    dpg.add_text("\t\t4.  参照页面上的计划和实操辅助在游戏内开票凹总力，或导出作业至.csv文件(⑧⑨)")
+                dpg.add_spacer(width=10)
+                with dpg.group():
+                    dpg.add_text("作业导入")
+                    dpg.bind_item_font(dpg.last_item(), cn_font_large)
+                    dpg.add_text("\t\t1.  预先在本地准备好作业（作战计划文件，.csv格式）(下图中①②③)")
+                    dpg.add_text("\t\t2.  在“作战计划”页中选择作业数据文件(下图中④⑤)")
+                    dpg.add_text("\t\t3.  抄作业，参照页面上的计划和实操辅助在游戏内开票凹总力，或按需修改(⑥⑦)")
             dpg.add_spacer(height=5)
-            dpg.add_text("作业导入")
-            dpg.bind_item_font(dpg.last_item(), cn_font_large)
-            dpg.add_text("\t\t第一步：预先在本地准备好作业（作战计划文件，.csv格式）")
-            dpg.add_text("\t\t第二步：在“作战计划”页中选择作业数据文件并导入")
-            dpg.add_text("\t\t第三步：抄作业，参照页面上的计划和实操辅助在游戏内开票凹总力，或根据需要对其进行修改")
             dpg.add_separator()
-            dpg.add_spacer(height=20)
+            dpg.add_spacer(height=5)
+            with dpg.group(horizontal=True):
+                with dpg.group():
+                    dpg.add_text("自行摸轴\n图示说明")
+                    dpg.bind_item_font(dpg.last_item(), cn_font_large)
+                    dpg.add_spacer(width=100)
+                dpg.add_image('quick_intro_2_texture')
+            dpg.add_spacer(height=5)
+            dpg.add_separator()
+            dpg.add_spacer(height=5)
+            with dpg.group(horizontal=True):
+                with dpg.group():
+                    dpg.add_text("作业导入\n图示说明")
+                    dpg.bind_item_font(dpg.last_item(), cn_font_large)
+                    dpg.add_spacer(width=100)
+                dpg.add_image('quick_intro_3_texture')
+            dpg.add_spacer(height=5)
+            dpg.add_separator()
+            dpg.add_spacer(height=5)
             dpg.add_text("希望本工具能帮到你，祝早日出分，爽拿一档  :D")
             dpg.bind_item_font(dpg.last_item(), cn_font_large)
             dpg.add_image('wtf_bro_img_texture')
@@ -3532,30 +3560,98 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
 
 
 
-        with dpg.tab(label="使用提示"):
-            dpg.add_separator()
-            dpg.add_spacer(height=5)
-            dpg.add_text("一切以方便优先")
-            dpg.bind_item_font(dpg.last_item(), cn_font_medium)
-            dpg.add_separator()
-            dpg.add_text("使用本工具(BATL.exe)时切记：一切以方便优先！视情况决定是否使用某个功能或填写某个字段", bullet=True)
-            dpg.add_text("比如设置技能时可以不设置目标（即默认以自身为目标），只要看buff时自己能看懂（知道是某目标挂上了buff）就行", bullet=True)
-            dpg.add_text("比如技能前摇等学生字段，除非对时间有严格要求，否则也可以留空不填", bullet=True)
-            dpg.add_spacer(height=20)
-            dpg.add_text("别高估自身手速")
-            dpg.bind_item_font(dpg.last_item(), cn_font_medium)
-            dpg.add_separator()
-            dpg.add_text("一般用户（包括手机平板用户）建议每两个EX技能间隔都不短于0.5秒，以提升容错", bullet=True)
-            dpg.add_text("制约解除决战中，考虑到操作难度和本工具性能，建议每两个EX技能间隔都不短于1秒，并将每格时间跨度设为不短于1s", bullet=True)
-            dpg.add_text("一般情况下，在模拟器上手操不使用AUTO时，2个EX技能的释放间隔难以短于0.2秒，3个为0.5秒，4个为1.0秒（因为要等第四个EX显示出来后才能选定释放）", bullet=True)
-            dpg.add_text("除非用户对手速有自信且有设置键位映射，否则不建议计划超过上述极限频率使用EX技能", bullet=True)
-            dpg.add_text("若右下角备选EX技能顺序正确且无需手动选择目标，则可以使用AUTO自动释放EX技能，费用充足时每两个EX技能的释放间隔为固定0.066秒（2帧）", bullet=True)
-            dpg.add_text("但这种情况不稳定，不建议在计划中使用", bullet=True)
-            dpg.add_spacer(height=20)
+        with dpg.tab(label="使用提示", tag='hint_tab'):
+            def hint_display(hint_list:list, parent='hint_tab'):
+                with dpg.group(parent=parent):
+                    dpg.add_separator()
+                    dpg.add_spacer(height=5)
+                    for hint_title, hint_text in hint_list:
+                        dpg.add_text(hint_title)
+                        dpg.bind_item_font(dpg.last_item(), cn_font_medium)
+                        dpg.add_separator()
+                        temp_text_list = hint_text.split('\n')
+                        for temp_text in temp_text_list:
+                            temp_text = temp_text[2:] if temp_text[:2]=='- ' else temp_text
+                            dpg.add_text(temp_text, bullet=True)
+                        dpg.add_spacer(height=20)
+            hint_passage = """### 可能用到的缩略词/黑话一览（包括但不限于本工具内）
+
+- BATL： Blue Archive TimeLiner，即本工具（BATL摸轴工具）
+- CD、前摇：  冷却时间（Cool Down）、技能释放到实际生效的时间
+- EX、NS、PS、SS： 大招、普通技能、被动技能、支援技能，分别对应学生的技能栏第1-4栏
+- buff、db(debuff)、CC：效果（通常指正面增益效果）、负面减益效果、控制（Crowd Control，人群控制）
+- 正手拐：先上buffEX，再放输出EX，常规输出流程
+- 反手拐：先放输出EX，再上buffEX，利用大部分时候输出EX前摇大于buff EX前摇的特点，在不太损失或不损失本轮输出EX伤害的情况下，更早过牌到下一张输出EX，达到一次buff持续时间内打出两次输出EX的效果。通常对手速要求较高，需要紧凑设置EX时间
+
+### 别急，不然有你急的（指等加载）
+
+- 刚打开BATL.exe时有5-10s的加载时间，此时窗口处于无响应状态
+- 请不要在这个时候拖动窗口，否则有较高概率导致程序卡死
+- 若确实因为包括上述原因在内的各种原因卡死了，请重启BATL.exe
+- 希望你没有因此损失什么工作量，以及建议养成勤保存的习惯:D
+
+### 一切以方便为优先
+
+- 使用本工具时切记：一切以方便优先
+- 你可以视情况决定是否使用某个功能或填写某个字段
+- 比如设置技能时可以不设置目标（即默认以自身为目标），只要看buff时自己能看懂（知道是某目标挂上了buff）就行
+- 比如“学生创建/编辑”中的技能前摇等字段，除非对时间有严格要求，否则也可以留空不填
+
+### 学生文件和作战计划文件没有联动
+
+- “学生创建/编辑”和“作战计划”是互相独立的两个页面，内部信息不共通
+- 也就是说用户需要在“学生创建/编辑”中创建学生并保存至文件，然后在“作战计划”中读取该文件
+
+### NS需要自行依情况设置
+
+- 虽然学生技能信息中包含NScd，但本工具并不提供自动设置NS的功能
+- 因为NS具体触发时间受很多因素影响（主要是前排的NS），包括位移、平a、换弹、EX、CC、索敌等
+- 建议在游戏中实操看看NS的触发时间，再在BATL作战计划里设置NS，并且注意这个只是大致时间，请留足余量
+
+### 别高估自身手速
+
+- 一般用户（包括手机平板用户）建议每两个EX技能间隔都不短于0.5秒，以提升容错
+- 制约解除决战中，考虑到操作难度和本工具性能，建议每两个EX技能间隔都不短于1秒，并将每格时间跨度设为不短于1s
+- 一般情况下，在模拟器上手操不使用AUTO时，2个EX技能的释放间隔难以短于0.2秒，3个为0.5秒，4个为1.0秒（因为要等第四个EX显示出来后才能选定释放）
+- 除非确有需要，同时用户对手速有自信且有设置键位映射，否则不建议计划以上述极限间隔甚至短于上述极限间隔设置EX技能
+
+### 关于文件管理
+
+- 学生文件和作战计划文件都有对应的默认保存/读取文件夹（./student_files/ 和 ./mission_files/）
+- 理论上这些文件放哪都行，但最好还是放在对应文件夹，防止自己找不到或不小心移动位置
+- 头像等材质文件也有默认的读取文件夹./texture_files/，同理，建议都放到这里
+
+### 一些建议避免的点炒饭行为
+
+- 在文本输入框输入双引号、单引号、逗号、反斜杠等（均指英文字符）可能会造成错误识别的字符
+- 在上一次操作后时间轴刷新未结束时，直接进行下一次操作
+- 直接手动修改学生文件和关卡计划文件，并改变其格式或结构（并不是不能改，但你需要知道你在改什么，并且修改前请备份）
+- 注：
+- “点炒饭”梗出自一个程序员笑话，感兴趣的可以去搜
+- 这里“点炒饭”指用户各种出乎意料的神奇操作，能从各种刁钻的角度让程序崩溃
+- 因个人精力有限，作者并不可能去仔细考虑所有点炒饭的操作并设置处理方法，因此只能希望用户不要作死去尝试过于神奇的操作
+- 当然，如果你确实想点炒饭，作者也不可能拦着，但可能会造成崩溃导致编辑内容未保存等后果
+- 如果你觉得某个操作不应该导致程序崩溃但程序确实崩溃了，请联系作者反馈"""
+
+            temp_list = hint_passage.split('### ')
+            temp_list = temp_list if temp_list[0] else temp_list[1:]
+            hint_list = []
+            for item in temp_list:
+                temp_list_2 = item.split('\n\n')
+                temp_list_2 = temp_list_2 if temp_list_2[-1] else temp_list_2[:-1]
+                hint_list.append(temp_list_2)
+            hint_display(hint_list, parent='hint_tab')
             
         with dpg.tab(label="关于"):
             dpg.add_separator()
             dpg.add_spacer(height=5)
+            with dpg.group(horizontal=True):
+                dpg.add_text("GitHub项目地址（请自备梯子）  --> ")
+                dpg.add_button(label='BA_TimeLiner', callback=lambda:webbrowser.open('https://github.com/giga-35b/BA_TimeLiner'))
+            with dpg.group(horizontal=True):
+                dpg.add_text("B站发布（暂无，但先放个按钮在这）  --> ")
+                dpg.add_button(label='视频')
+                dpg.add_button(label='专栏')
             with dpg.group(horizontal=True):
                 dpg.add_text("若需反馈bug或有其他疑问与建议，请联系机管giga-35b  --> ")
                 dpg.add_button(label='B站空间（私信）', callback=lambda:webbrowser.open('https://space.bilibili.com/15097920'))
@@ -3601,6 +3697,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                     ['2024.11.4', 'v0.10.6', '实操模拟箭头bug修复，事件位置bug修复，事件条显示优化'],
                     ['2024.11.7', 'v0.10.7', '撤销重做功能bug修复，新增设置EX失败的提示'],
                     ['2024.11.8', 'v0.10.8', '部分说明文案调整'],
+                    ['2024.11.18', 'v0.10.9', '使用提示更新（并不是最终版，还会继续更，大概）'],
                 ]
                 dpg.add_text("      时间                 版本号       内容")
                 with dpg.group(horizontal=True):
@@ -3619,7 +3716,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                                 if len(string_list)>3:
                                     if isinstance(string_list[3], list):
                                         # dpg.add_text(string_list[2])
-                                        dpg.add_button(label=string_list[3][0], small=True, callback=lambda:webbrowser.open(string_list[3][1]))
+                                        link = string_list[3][1]
+                                        dpg.add_button(label=string_list[3][0], small=True, callback=lambda:webbrowser.open(link))
                                         dpg.add_text(string_list[3][2])
                                     # elif string_list[3]=='grey':
                                     #     dpg.add_text(string_list[2], color=(128,128,128))
@@ -3695,9 +3793,10 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
         with dpg.tab(label="debug"):
             def debug_terminal(sender, app_data):
                 try:
-                    code = dpg.get_value('debug_terminal')
-                    code2 = "\ndpg.set_value('debug_output_variable', str(debug_output))"
-                    exec(code+code2)
+                    code1 = "debug_output = ''\n"
+                    code2 = dpg.get_value('debug_terminal')
+                    code3 = "\ndpg.set_value('debug_output_variable', str(debug_output))"
+                    exec(code1+code2+code3)
                 except Exception as e:
                     print(f"ERROR: {e}")
             dpg.add_text('******   DO NOT DO ANYTHING IN THIS PAGE BEFORE YOU KNOW WHAT YOU ARE DOING!   ******')
