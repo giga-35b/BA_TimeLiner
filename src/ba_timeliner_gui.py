@@ -12,7 +12,7 @@ from copy import deepcopy
 
 from ba_timeliner_kernel import *
     
-BATL_VERSION = '0.10.9'
+BATL_VERSION = '0.10.10'
 IS_RELEASE_VERSION = False
 
 # 替换输出至debug_log 第1部分
@@ -392,8 +392,8 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
             dpg.bind_item_font(dpg.last_item(), cn_font_huge)
             dpg.add_separator()
             dpg.add_spacer(height=5)
-            dpg.add_text("本工具的适用对象包括但不限于：总力战、大决战、制约解除决战等战斗")
-            dpg.add_text("本工具的功能包括但不限于：战斗的自行摸轴、实操辅助、作业导入/导出")
+            dpg.add_text("本工具旨在：在BA玩家摸轴和开票战斗时，为玩家记录各项信息，并提供直观的可视化情报支持，例如buff、费用等。本工具亦支持作战计划的导入导出，方便玩家分享和抄作业。")
+            dpg.add_text("本工具的功能包括但不限于：战斗的自行摸轴、实操辅助、作业导入/导出；适用对象包括但不限于：总力战、大决战、制约解除决战等战斗")
             dpg.add_spacer(height=10)
             dpg.add_text("快速入门")
             dpg.bind_item_font(dpg.last_item(), cn_font_huge)
@@ -3574,54 +3574,60 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                             temp_text = temp_text[2:] if temp_text[:2]=='- ' else temp_text
                             dpg.add_text(temp_text, bullet=True)
                         dpg.add_spacer(height=20)
-            hint_passage = """### 可能用到的缩略词/黑话一览（包括但不限于本工具内）
+            hint_passage = """## 可能用到的缩略词/黑话一览（包括但不限于本工具内）
 
 - BATL： Blue Archive TimeLiner，即本工具（BATL摸轴工具）
-- CD、前摇：  冷却时间（Cool Down）、技能释放到实际生效的时间
-- EX、NS、PS、SS： 大招、普通技能、被动技能、支援技能，分别对应学生的技能栏第1-4栏
-- buff、db(debuff)、CC：效果（通常指正面增益效果）、负面减益效果、控制（Crowd Control，人群控制）
-- 正手拐：先上buffEX，再放输出EX，常规输出流程
-- 反手拐：先放输出EX，再上buffEX，利用大部分时候输出EX前摇大于buff EX前摇的特点，在不太损失或不损失本轮输出EX伤害的情况下，更早过牌到下一张输出EX，达到一次buff持续时间内打出两次输出EX的效果。通常对手速要求较高，需要紧凑设置EX时间
+- CD、前摇：  冷却时间（Cool Down）、技能释放到实际生效/命中的时间
+- EX、NS、PS、SS： 大招、普通技能、被动技能、辅助技能，分别对应学生的技能栏第1-4栏
+- buff、db/debuff、CC：效果（通常指正面增益效果）、负面减益效果、控制（Crowd Control，人群控制）
+- 正手拐：先上buffEX，再放输出EX，即常规输出流程
+- 反手拐：先放输出EX，再上buffEX，利用大部分时候输出EX前摇大于buff EX前摇的特点，在不太损失或不损失本轮输出EX伤害的情况下，更早过牌到下一张输出EX，达到一次buff持续时间内打出两次输出EX的效果。通常对手速要求较高，需要紧凑设置EX时间，且并非所有输出学生都适用（如礼奈无法使用该技巧）
 
-### 别急，不然有你急的（指等加载）
+## 别急，不然有你急的（指等加载）
 
 - 刚打开BATL.exe时有5-10s的加载时间，此时窗口处于无响应状态
 - 请不要在这个时候拖动窗口，否则有较高概率导致程序卡死
+- 在其他情况下拖动窗口也有较小概率导致程序卡死，总之尽量少拖动窗口
 - 若确实因为包括上述原因在内的各种原因卡死了，请重启BATL.exe
 - 希望你没有因此损失什么工作量，以及建议养成勤保存的习惯:D
+- 别问，问就是ui库内置特性，修不了
 
-### 一切以方便为优先
+## 一切以方便为优先
 
 - 使用本工具时切记：一切以方便优先
 - 你可以视情况决定是否使用某个功能或填写某个字段
 - 比如设置技能时可以不设置目标（即默认以自身为目标），只要看buff时自己能看懂（知道是某目标挂上了buff）就行
 - 比如“学生创建/编辑”中的技能前摇等字段，除非对时间有严格要求，否则也可以留空不填
 
-### 学生文件和作战计划文件没有联动
+## 学生文件和作战计划文件没有联动
 
 - “学生创建/编辑”和“作战计划”是互相独立的两个页面，内部信息不共通
 - 也就是说用户需要在“学生创建/编辑”中创建学生并保存至文件，然后在“作战计划”中读取该文件
+- 若修改某个学生文件，应用了该学生的作战计划文件中的学生信息并不会有变化
+- 若需要更新某个作战计划中的学生信息，有两种方法：
+	- 将需要更新的学生从作战计划中移除，再添加更新后的学生文件。注意：这会导致作战计划中已有的该学生相关技能和buff被清除。
+	- 直接打开./mission_files/作战计划名.csv，手动修改文件内的学生信息字段，修改完成后在BATL中重新打开该文件。注意：该方式不会清除该学生相关技能和buff信息，但可能修改格式错误导致无法正常读取，故修改前请备份作战计划文件。
 
-### NS需要自行依情况设置
+## NS需要自行依情况设置
 
 - 虽然学生技能信息中包含NScd，但本工具并不提供自动设置NS的功能
 - 因为NS具体触发时间受很多因素影响（主要是前排的NS），包括位移、平a、换弹、EX、CC、索敌等
 - 建议在游戏中实操看看NS的触发时间，再在BATL作战计划里设置NS，并且注意这个只是大致时间，请留足余量
 
-### 别高估自身手速
+## 别高估自身手速
 
 - 一般用户（包括手机平板用户）建议每两个EX技能间隔都不短于0.5秒，以提升容错
 - 制约解除决战中，考虑到操作难度和本工具性能，建议每两个EX技能间隔都不短于1秒，并将每格时间跨度设为不短于1s
 - 一般情况下，在模拟器上手操不使用AUTO时，2个EX技能的释放间隔难以短于0.2秒，3个为0.5秒，4个为1.0秒（因为要等第四个EX显示出来后才能选定释放）
 - 除非确有需要，同时用户对手速有自信且有设置键位映射，否则不建议计划以上述极限间隔甚至短于上述极限间隔设置EX技能
 
-### 关于文件管理
+## 关于文件管理
 
 - 学生文件和作战计划文件都有对应的默认保存/读取文件夹（./student_files/ 和 ./mission_files/）
 - 理论上这些文件放哪都行，但最好还是放在对应文件夹，防止自己找不到或不小心移动位置
 - 头像等材质文件也有默认的读取文件夹./texture_files/，同理，建议都放到这里
 
-### 一些建议避免的点炒饭行为
+## 一些建议避免的点炒饭行为
 
 - 在文本输入框输入双引号、单引号、逗号、反斜杠等（均指英文字符）可能会造成错误识别的字符
 - 在上一次操作后时间轴刷新未结束时，直接进行下一次操作
@@ -3633,7 +3639,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
 - 当然，如果你确实想点炒饭，作者也不可能拦着，但可能会造成崩溃导致编辑内容未保存等后果
 - 如果你觉得某个操作不应该导致程序崩溃但程序确实崩溃了，请联系作者反馈"""
 
-            temp_list = hint_passage.split('### ')
+            temp_list = hint_passage.split('## ')
             temp_list = temp_list if temp_list[0] else temp_list[1:]
             hint_list = []
             for item in temp_list:
@@ -3657,12 +3663,10 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                 dpg.add_button(label='B站空间（私信）', callback=lambda:webbrowser.open('https://space.bilibili.com/15097920'))
                 dpg.add_button(label='QQ', callback=lambda:dpg.set_value('qq_hint', "现在用QQ联系有点太早了，等到北京时间2041年11月21日凌晨3点57分38秒再说吧~" if not dpg.get_value('qq_hint') else ""))
                 dpg.add_text('', tag='qq_hint')
-            dpg.add_text('使用和分享时请遵守CC BY-NC-SA 4.0协议', bullet=True, color=(128,128,128))
+            dpg.add_text('使用和分享时请遵守CC BY 4.0协议', bullet=True, color=(128,128,128))
             with dpg.tooltip(dpg.last_item()):
                 dpg.add_text('您可以自由复制、散布、展示及演出本作品。', color=(128,128,128))
                 dpg.add_text("您必须按照作者或授权人所指定的方式，保留其姓名标示。", color=(128,128,128))
-                dpg.add_text('您不得为商业目的而使用本作品。', color=(128,128,128))
-                dpg.add_text("若您改变、转变或改作本作品，仅在遵守与本著作相同的授权条款下，您才能散布由本作品产生的衍生作品。", color=(128,128,128))
             dpg.add_spacer(height=10)
             # dpg.add_text("开发日志")
             # dpg.bind_item_font(dpg.last_item(), cn_font_medium)
@@ -3698,6 +3702,7 @@ with dpg.window(tag='ba_timeliner', width=1200, height=800):
                     ['2024.11.7', 'v0.10.7', '撤销重做功能bug修复，新增设置EX失败的提示'],
                     ['2024.11.8', 'v0.10.8', '部分说明文案调整'],
                     ['2024.11.18', 'v0.10.9', '使用提示更新（并不是最终版，还会继续更，大概）'],
+                    ['2024.11.18', 'v0.10.10', '部分说明文案调整'],
                 ]
                 dpg.add_text("      时间                 版本号       内容")
                 with dpg.group(horizontal=True):
